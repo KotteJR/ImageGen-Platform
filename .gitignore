@@ -1,0 +1,11 @@
+# Generated images (persistent history)
+backend/generated/
+
+# Python
+backend/venv/
+backend/__pycache__/
+backend/*.log
+*.pyc
+
+# OS
+.DS_Store

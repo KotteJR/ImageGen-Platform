@@ -15,18 +15,20 @@ GET  /api/health    → health check
 import asyncio
 import base64
 import io
+import json
 import logging
 import os
 import random
 import threading
 import time
 from enum import Enum
+from pathlib import Path
+from typing import Optional
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
-from typing import Optional
 
 # ── Logging ───────────────────────────────────────────────────────────
 logging.basicConfig(
@@ -253,6 +255,37 @@ def trim_prompt(text: str, max_tokens: int = 70) -> str:
     return trimmed
 
 
+# ── Image History (persistent disk storage) ───────────────────────────
+
+GENERATED_DIR = Path(__file__).parent / "generated"
+GENERATED_DIR.mkdir(exist_ok=True)
+
+
+def save_to_history(
+    img_bytes: bytes, prompt: str, negative: str, seed: int,
+    width: int, height: int, model_mode: str,
+    guidance_scale: float, num_inference_steps: int, elapsed: float,
+    custom_filename: Optional[str] = None,
+) -> str:
+    """Save a generated image + metadata JSON to the generated/ folder."""
+    ts = int(time.time() * 1000)
+    img_name = custom_filename or f"{ts}_{seed}_{model_mode}.png"
+    if not img_name.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+        img_name += ".png"
+
+    (GENERATED_DIR / img_name).write_bytes(img_bytes)
+
+    meta = {
+        "filename": img_name, "prompt": prompt, "negative_prompt": negative,
+        "seed": seed, "width": width, "height": height, "model_mode": model_mode,
+        "guidance_scale": guidance_scale, "num_inference_steps": num_inference_steps,
+        "time_seconds": elapsed, "timestamp": ts,
+    }
+    (GENERATED_DIR / f"{img_name}.json").write_text(json.dumps(meta, indent=2))
+    logger.info(f"Saved to history: {img_name}")
+    return img_name
+
+
 # ── Request / Response ────────────────────────────────────────────────
 
 class ModelMode(str, Enum):
@@ -318,6 +351,17 @@ async def generate(req: GenerateRequest):
         f"(mode={req.model_mode.value}, seed={used_seed}, "
         f"steps={req.num_inference_steps}, cfg={req.guidance_scale})"
     )
+
+    # Save to disk history
+    try:
+        save_to_history(
+            img_bytes=img_bytes, prompt=req.prompt, negative=req.negative_prompt,
+            seed=used_seed, width=req.width, height=req.height,
+            model_mode=req.model_mode.value, guidance_scale=req.guidance_scale,
+            num_inference_steps=req.num_inference_steps, elapsed=elapsed,
+        )
+    except Exception as e:
+        logger.warning(f"Failed to save to history: {e}")
 
     return GenerateResponse(
         image=b64,
@@ -430,6 +474,63 @@ def _generate_flux(
     buf = io.BytesIO()
     result.images[0].save(buf, format="PNG")
     return buf.getvalue(), used_seed
+
+
+# ── History Endpoints ─────────────────────────────────────────────────
+
+@app.get("/api/history")
+async def list_history(limit: int = 200, offset: int = 0):
+    """List saved images from the generated/ folder (newest first)."""
+    if not GENERATED_DIR.exists():
+        return {"images": [], "total": 0}
+
+    meta_files = sorted(GENERATED_DIR.glob("*.json"), key=lambda f: f.stat().st_mtime, reverse=True)
+    total = len(meta_files)
+    page = meta_files[offset : offset + limit]
+
+    images = []
+    for mf in page:
+        try:
+            meta = json.loads(mf.read_text())
+            if (GENERATED_DIR / meta["filename"]).exists():
+                images.append(meta)
+        except Exception:
+            continue
+
+    return {"images": images, "total": total}
+
+
+@app.get("/api/history/image/{filename}")
+async def get_history_image(filename: str):
+    """Serve a saved image from the generated/ folder."""
+    safe = Path(filename).name
+    img_path = GENERATED_DIR / safe
+    if not img_path.exists() or not img_path.is_file():
+        raise HTTPException(404, "Image not found")
+
+    suffix = img_path.suffix.lower()
+    media_types = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp"}
+    return Response(content=img_path.read_bytes(), media_type=media_types.get(suffix, "image/png"))
+
+
+@app.delete("/api/history/{filename}")
+async def delete_history_image(filename: str):
+    """Delete a saved image and its metadata."""
+    safe = Path(filename).name
+    img_path = GENERATED_DIR / safe
+    meta_path = GENERATED_DIR / f"{safe}.json"
+
+    deleted = False
+    if img_path.exists():
+        img_path.unlink()
+        deleted = True
+    if meta_path.exists():
+        meta_path.unlink()
+        deleted = True
+
+    if not deleted:
+        raise HTTPException(404, "Image not found")
+    return {"deleted": safe}
 
 
 # ── Main ──────────────────────────────────────────────────────────────
