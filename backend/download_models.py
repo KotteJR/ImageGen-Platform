@@ -6,7 +6,8 @@ Usage:
     python download_models.py lightning             # download just one
     python download_models.py realvis_fast flux     # download specific ones
     python download_models.py hunyuan_image         # download Hunyuan image model
-    python download_models.py hunyuan_video         # download Hunyuan video model
+    python download_models.py hunyuan_video         # download Hunyuan video (text-to-video)
+    python download_models.py hunyuan_video_i2v    # download Hunyuan video (image-to-video)
     python download_models.py hunyuan_3d            # download Hunyuan 3D model
     python download_models.py --all                 # download everything (SDXL + FLUX + Hunyuan)
 """
@@ -80,6 +81,15 @@ def download_hunyuan_video():
     print(f"   ✅ HunyuanVideo done in {time.time()-t0:.0f}s")
 
 
+def download_hunyuan_video_i2v():
+    """Download HunyuanVideo I2V — image-to-video (~26GB, similar to T2V model)."""
+    from diffusers import HunyuanVideoImageToVideoPipeline
+    print("\n📦 Downloading HunyuanVideo I2V (~26GB, this will take a while)...")
+    t0 = time.time()
+    HunyuanVideoImageToVideoPipeline.download("hunyuanvideo-community/HunyuanVideo-I2V")
+    print(f"   ✅ HunyuanVideo I2V done in {time.time()-t0:.0f}s")
+
+
 def download_hunyuan_3d():
     """Download Hunyuan3D-2 shape + texture models (~15GB total).
 
@@ -114,6 +124,7 @@ MODEL_MAP = {
     # Hunyuan models
     "hunyuan_image": [download_hunyuan_image],
     "hunyuan_video": [download_hunyuan_video],
+    "hunyuan_video_i2v": [download_hunyuan_video_i2v],
     "hunyuan_3d": [download_hunyuan_3d],
 }
 
@@ -128,6 +139,7 @@ SDXL_FLUX_STEPS = [
 HUNYUAN_STEPS = [
     download_hunyuan_image,
     download_hunyuan_video,
+    download_hunyuan_video_i2v,
     download_hunyuan_3d,
 ]
 
@@ -141,7 +153,7 @@ def main():
     if "--all" in args:
         requested = list(MODEL_MAP.keys())
     elif "--hunyuan" in args:
-        requested = ["hunyuan_image", "hunyuan_video", "hunyuan_3d"]
+        requested = ["hunyuan_image", "hunyuan_video", "hunyuan_video_i2v", "hunyuan_3d"]
     elif args:
         requested = args
     else:

@@ -7,10 +7,10 @@ const nextConfig: NextConfig = {
   },
   // Increase serverless function timeout for long-running generation
   serverExternalPackages: [],
-  // Ensure API routes work correctly on Vercel
+  // Ensure API routes work correctly
   experimental: {
     serverActions: {
-      bodySizeLimit: "10mb",
+      bodySizeLimit: "50mb", // video/3D responses can be large
     },
   },
 };
