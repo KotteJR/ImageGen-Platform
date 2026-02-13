@@ -56,6 +56,66 @@ interface PromptEntry {
   filename?: string;
 }
 
+interface GpuInfo {
+  index: number;
+  name: string;
+  temperature_c: number | null;
+  gpu_utilization_pct: number | null;
+  memory_utilization_pct: number | null;
+  memory_used_mb: number | null;
+  memory_total_mb: number | null;
+  memory_free_mb: number | null;
+  power_draw_w: number | null;
+  power_limit_w: number | null;
+  fan_speed_pct: number | null;
+  pstate: string;
+  clock_graphics_mhz: number | null;
+  clock_memory_mhz: number | null;
+  slot: {
+    slot_id: number;
+    slot_type: string;
+    loaded_models: string[];
+    active_task: string | null;
+    generation_count: number;
+  } | null;
+}
+
+interface GpuStats {
+  gpus: GpuInfo[];
+  summary: {
+    gpu_count: number;
+    total_memory_gb: number;
+    total_power_draw_w: number;
+    total_power_limit_w: number;
+    avg_temperature_c: number;
+    avg_gpu_utilization_pct: number;
+    driver_version: string;
+    cuda_version: string;
+  };
+  pool: {
+    num_gpus: number;
+    sdxl_slots: Array<{
+      slot_id: number;
+      gpu_ids: number[];
+      loaded_models: string[];
+      active_task: string | null;
+      generation_count: number;
+    }> | number;
+    flux_slots: Array<{
+      slot_id: number;
+      gpu_ids: number[];
+      loaded_models: string[];
+      active_task: string | null;
+      generation_count: number;
+    }> | number;
+    sdxl_parallel_capacity: number;
+    flux_parallel_capacity: number;
+    active_jobs: number;
+    total_generated: number;
+  };
+  error?: string;
+}
+
 /* ══════════════════════════════════════════════════════════════════════
    Constants
    ══════════════════════════════════════════════════════════════════════ */
@@ -226,6 +286,32 @@ export default function Home() {
   /* ── Backend status ────────────────────────────────────────────── */
   const [backendStatus, setBackendStatus] = useState<BackendStatus>("checking");
   const [backendMessage, setBackendMessage] = useState<string | null>(null);
+
+  /* ═══════════════════════════════════════════════════════════════
+     GPU HARDWARE MONITOR
+     ═══════════════════════════════════════════════════════════════ */
+  const [showGpuPanel, setShowGpuPanel] = useState(false);
+  const [gpuStats, setGpuStats] = useState<GpuStats | null>(null);
+  const [gpuError, setGpuError] = useState<string | null>(null);
+  const gpuPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const fetchGpuStats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/gpu/stats");
+      if (!res.ok) { setGpuError("Backend unreachable"); return; }
+      const data = await res.json();
+      if (data.error) { setGpuError(data.error); setGpuStats(null); }
+      else { setGpuStats(data); setGpuError(null); }
+    } catch { setGpuError("Connection failed"); }
+  }, []);
+
+  useEffect(() => {
+    if (showGpuPanel && backendStatus === "online") {
+      fetchGpuStats();
+      gpuPollRef.current = setInterval(fetchGpuStats, 3000);
+    }
+    return () => { if (gpuPollRef.current) clearInterval(gpuPollRef.current); };
+  }, [showGpuPanel, backendStatus, fetchGpuStats]);
 
   /* ═══════════════════════════════════════════════════════════════
      IMAGE TAB STATE
@@ -742,6 +828,27 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* GPU Monitor Button */}
+            <button
+              onClick={() => setShowGpuPanel(!showGpuPanel)}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[11px] font-medium transition ${
+                showGpuPanel
+                  ? "bg-cyan-500/20 text-cyan-300"
+                  : "bg-white/[0.04] text-white/30 hover:bg-white/[0.08] hover:text-white/50"
+              }`}
+              title="GPU Hardware Monitor"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m-9-1.5h10.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H6.75A2.25 2.25 0 004.5 6.75v10.5a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+              GPUs
+              {gpuStats && (
+                <span className="rounded bg-white/[0.06] px-1 py-0.5 text-[9px] text-white/25">
+                  {gpuStats.summary.gpu_count}
+                </span>
+              )}
+            </button>
+
             <div className={`h-2 w-2 rounded-full ${
               backendStatus === "online" ? "bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.5)]"
                 : backendStatus === "starting" || backendStatus === "checking" ? "bg-amber-400 animate-pulse"
@@ -770,6 +877,133 @@ export default function Home() {
             </svg>
             <span className="text-[11px] text-amber-300/60">{backendMessage}</span>
             <button onClick={() => setBackendMessage(null)} className="ml-auto text-[11px] text-white/20 hover:text-white/40">Dismiss</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── GPU Hardware Monitor Panel ─────────────────────────── */}
+      {showGpuPanel && (
+        <div className="border-b border-white/[0.06] bg-[#0c0c14] px-6 py-4 animate-fade-in">
+          <div className="mx-auto max-w-7xl">
+            {gpuError ? (
+              <div className="flex items-center gap-2 text-[12px] text-red-400/70">
+                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                {gpuError}
+                {backendStatus !== "online" && <span className="text-white/20"> (backend is offline)</span>}
+              </div>
+            ) : !gpuStats ? (
+              <div className="flex items-center gap-2 text-[12px] text-white/20">
+                <div className="h-3 w-3 animate-spin rounded-full border-2 border-white/10 border-t-cyan-400" />
+                Loading GPU stats...
+              </div>
+            ) : (
+              <>
+                {/* Summary Row */}
+                <div className="mb-3 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <h3 className="text-[13px] font-semibold text-white/70">Hardware Monitor</h3>
+                    <div className="flex items-center gap-3 text-[10px] text-white/25">
+                      <span>NVIDIA Driver {gpuStats.summary.driver_version}</span>
+                      <span>CUDA {gpuStats.summary.cuda_version}</span>
+                      <span>{gpuStats.summary.total_memory_gb} GB VRAM</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-[10px]">
+                    <span className="text-white/25">
+                      Pool: <span className="text-cyan-400/60">{gpuStats.pool.active_jobs}</span> active
+                      {" / "}
+                      <span className="text-white/40">{gpuStats.pool.total_generated}</span> total
+                    </span>
+                    <span className="text-white/25">
+                      Power: <span className={`${gpuStats.summary.total_power_draw_w > gpuStats.summary.total_power_limit_w * 0.8 ? "text-orange-400/60" : "text-emerald-400/50"}`}>
+                        {gpuStats.summary.total_power_draw_w}W
+                      </span>
+                      {" / "}{gpuStats.summary.total_power_limit_w}W
+                    </span>
+                  </div>
+                </div>
+
+                {/* GPU Cards Grid */}
+                <div className="grid grid-cols-4 gap-2">
+                  {gpuStats.gpus.map((gpu) => {
+                    const tempColor = (gpu.temperature_c ?? 0) > 80 ? "text-red-400" : (gpu.temperature_c ?? 0) > 60 ? "text-orange-400" : (gpu.temperature_c ?? 0) > 40 ? "text-yellow-400" : "text-emerald-400";
+                    const utilColor = (gpu.gpu_utilization_pct ?? 0) > 80 ? "text-cyan-400" : (gpu.gpu_utilization_pct ?? 0) > 40 ? "text-blue-400" : "text-white/30";
+                    const memPct = gpu.memory_total_mb ? Math.round(((gpu.memory_used_mb ?? 0) / gpu.memory_total_mb) * 100) : 0;
+                    const memColor = memPct > 80 ? "bg-red-500/60" : memPct > 50 ? "bg-orange-500/50" : memPct > 10 ? "bg-cyan-500/50" : "bg-white/10";
+                    const isActive = gpu.slot?.active_task != null;
+
+                    return (
+                      <div
+                        key={gpu.index}
+                        className={`rounded-lg border p-2.5 transition ${
+                          isActive
+                            ? "border-cyan-500/30 bg-cyan-500/[0.04]"
+                            : "border-white/[0.06] bg-white/[0.015]"
+                        }`}
+                      >
+                        {/* GPU Header */}
+                        <div className="mb-2 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`inline-block h-1.5 w-1.5 rounded-full ${isActive ? "bg-cyan-400 animate-pulse" : memPct > 10 ? "bg-emerald-400/60" : "bg-white/15"}`} />
+                            <span className="text-[11px] font-medium text-white/50">GPU {gpu.index}</span>
+                          </div>
+                          <span className={`text-[10px] font-mono ${tempColor}`}>{gpu.temperature_c ?? "--"}°C</span>
+                        </div>
+
+                        {/* Memory Bar */}
+                        <div className="mb-1.5">
+                          <div className="flex items-center justify-between text-[9px] text-white/20 mb-0.5">
+                            <span>VRAM</span>
+                            <span>{gpu.memory_used_mb ? (gpu.memory_used_mb / 1024).toFixed(1) : "0"} / {gpu.memory_total_mb ? (gpu.memory_total_mb / 1024).toFixed(0) : "?"} GB</span>
+                          </div>
+                          <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-500 ${memColor}`} style={{ width: `${memPct}%` }} />
+                          </div>
+                        </div>
+
+                        {/* Utilization */}
+                        <div className="mb-1.5">
+                          <div className="flex items-center justify-between text-[9px] text-white/20 mb-0.5">
+                            <span>Utilization</span>
+                            <span className={utilColor}>{gpu.gpu_utilization_pct ?? 0}%</span>
+                          </div>
+                          <div className="h-1 w-full rounded-full bg-white/[0.06] overflow-hidden">
+                            <div className="h-full rounded-full bg-cyan-500/40 transition-all duration-500" style={{ width: `${gpu.gpu_utilization_pct ?? 0}%` }} />
+                          </div>
+                        </div>
+
+                        {/* Stats Row */}
+                        <div className="flex items-center justify-between text-[9px] text-white/15">
+                          <span>{gpu.power_draw_w?.toFixed(0) ?? "--"}W</span>
+                          <span>{gpu.fan_speed_pct ?? "--"}% fan</span>
+                          <span>{gpu.pstate}</span>
+                        </div>
+
+                        {/* Slot Info */}
+                        {gpu.slot && (
+                          <div className="mt-1.5 pt-1.5 border-t border-white/[0.04]">
+                            <div className="flex items-center gap-1 text-[9px]">
+                              {isActive ? (
+                                <span className="text-cyan-400/70 animate-pulse">Working: {gpu.slot.active_task}</span>
+                              ) : gpu.slot.loaded_models.length > 0 ? (
+                                <span className="text-white/20">Loaded: {gpu.slot.loaded_models.join(", ")}</span>
+                              ) : (
+                                <span className="text-white/10">Idle</span>
+                              )}
+                            </div>
+                            <div className="text-[8px] text-white/10 mt-0.5">
+                              Slot {gpu.slot.slot_id} ({gpu.slot.slot_type}) — {gpu.slot.generation_count} generated
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

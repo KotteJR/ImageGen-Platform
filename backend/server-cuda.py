@@ -51,6 +51,7 @@ import json
 import logging
 import os
 import random
+import subprocess
 import tempfile
 import threading
 import time
@@ -2031,6 +2032,157 @@ async def health():
             },
         },
     }
+
+
+@app.get("/api/gpu/stats")
+async def gpu_stats():
+    """Live GPU hardware stats via nvidia-smi."""
+    try:
+        result = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=index,name,temperature.gpu,utilization.gpu,utilization.memory,"
+                "memory.used,memory.total,memory.free,power.draw,power.limit,"
+                "fan.speed,pstate,clocks.current.graphics,clocks.current.memory",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode != 0:
+            return {"error": f"nvidia-smi failed: {result.stderr.strip()}"}
+
+        gpus = []
+        for line in result.stdout.strip().split("\n"):
+            parts = [p.strip() for p in line.split(",")]
+            if len(parts) < 14:
+                continue
+
+            idx = int(parts[0])
+            # Check if this GPU is currently active in the pool
+            slot_info = None
+            for s in pool.sdxl_slots:
+                if idx in s.gpu_ids:
+                    slot_info = {
+                        "slot_id": s.slot_id,
+                        "slot_type": "sdxl",
+                        "loaded_models": list(s._pipelines.keys()),
+                        "active_task": s.active_task,
+                        "generation_count": s.generation_count,
+                    }
+                    break
+            if slot_info is None:
+                for s in pool.flux_slots:
+                    if idx in s.gpu_ids:
+                        slot_info = {
+                            "slot_id": s.slot_id,
+                            "slot_type": "flux",
+                            "loaded_models": list(s._pipelines.keys()),
+                            "active_task": s.active_task,
+                            "generation_count": s.generation_count,
+                        }
+                        break
+
+            gpus.append({
+                "index": idx,
+                "name": parts[1],
+                "temperature_c": _safe_int(parts[2]),
+                "gpu_utilization_pct": _safe_int(parts[3]),
+                "memory_utilization_pct": _safe_int(parts[4]),
+                "memory_used_mb": _safe_int(parts[5]),
+                "memory_total_mb": _safe_int(parts[6]),
+                "memory_free_mb": _safe_int(parts[7]),
+                "power_draw_w": _safe_float(parts[8]),
+                "power_limit_w": _safe_float(parts[9]),
+                "fan_speed_pct": _safe_int(parts[10]),
+                "pstate": parts[11],
+                "clock_graphics_mhz": _safe_int(parts[12]),
+                "clock_memory_mhz": _safe_int(parts[13]),
+                "slot": slot_info,
+            })
+
+        # Get driver/CUDA info
+        driver_result = subprocess.run(
+            ["nvidia-smi", "--query-gpu=driver_version", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5,
+        )
+        driver_version = driver_result.stdout.strip().split("\n")[0].strip() if driver_result.returncode == 0 else "unknown"
+
+        cuda_version = "unknown"
+        try:
+            smi_out = subprocess.run(["nvidia-smi"], capture_output=True, text=True, timeout=5)
+            for l in smi_out.stdout.split("\n"):
+                if "CUDA Version" in l:
+                    cuda_version = l.split("CUDA Version:")[1].strip().split()[0]
+                    break
+        except Exception:
+            pass
+
+        total_memory_gb = sum(g["memory_total_mb"] for g in gpus) / 1024
+        total_power_draw = sum(g["power_draw_w"] or 0 for g in gpus)
+        total_power_limit = sum(g["power_limit_w"] or 0 for g in gpus)
+        avg_temp = sum(g["temperature_c"] or 0 for g in gpus) / max(len(gpus), 1)
+        avg_util = sum(g["gpu_utilization_pct"] or 0 for g in gpus) / max(len(gpus), 1)
+
+        return {
+            "gpus": gpus,
+            "summary": {
+                "gpu_count": len(gpus),
+                "total_memory_gb": round(total_memory_gb, 1),
+                "total_power_draw_w": round(total_power_draw, 1),
+                "total_power_limit_w": round(total_power_limit, 1),
+                "avg_temperature_c": round(avg_temp, 1),
+                "avg_gpu_utilization_pct": round(avg_util, 1),
+                "driver_version": driver_version,
+                "cuda_version": cuda_version,
+            },
+            "pool": {
+                **pool.info,
+                "sdxl_slots": [
+                    {
+                        "slot_id": s.slot_id,
+                        "gpu_ids": s.gpu_ids,
+                        "loaded_models": list(s._pipelines.keys()),
+                        "active_task": s.active_task,
+                        "generation_count": s.generation_count,
+                    }
+                    for s in pool.sdxl_slots
+                ],
+                "flux_slots": [
+                    {
+                        "slot_id": s.slot_id,
+                        "gpu_ids": s.gpu_ids,
+                        "loaded_models": list(s._pipelines.keys()),
+                        "active_task": s.active_task,
+                        "generation_count": s.generation_count,
+                    }
+                    for s in pool.flux_slots
+                ],
+            },
+        }
+    except FileNotFoundError:
+        return {"error": "nvidia-smi not found — not a CUDA machine"}
+    except subprocess.TimeoutExpired:
+        return {"error": "nvidia-smi timed out"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def _safe_int(val: str) -> Optional[int]:
+    """Parse nvidia-smi value to int, returning None for N/A."""
+    try:
+        return int(val.strip())
+    except (ValueError, AttributeError):
+        return None
+
+
+def _safe_float(val: str) -> Optional[float]:
+    """Parse nvidia-smi value to float, returning None for N/A."""
+    try:
+        return float(val.strip())
+    except (ValueError, AttributeError):
+        return None
 
 
 @app.get("/api/queue/status")
