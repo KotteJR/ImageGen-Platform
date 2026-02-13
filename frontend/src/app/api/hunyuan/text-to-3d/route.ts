@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const HUNYUAN_URL = process.env.BACKEND_URL || "http://localhost:8100";
 
-export const maxDuration = 900; // 15 minutes (text→image→3D pipeline)
+export const maxDuration = 300; // 5 minutes (Vercel hobby limit)
 
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;
