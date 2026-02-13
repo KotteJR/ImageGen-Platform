@@ -6210,3 +6210,63 @@ INFO:     127.0.0.1:63891 - "GET /api/health HTTP/1.1" 200 OK
 INFO:     127.0.0.1:63904 - "GET /api/health HTTP/1.1" 200 OK
 INFO:     127.0.0.1:63917 - "GET /api/health HTTP/1.1" 200 OK
 INFO:     127.0.0.1:63921 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63962 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63966 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63974 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63982 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63988 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63997 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64001 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64007 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64018 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64024 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64024 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64031 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64031 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64031 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64031 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64031 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64051 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64052 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64047 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64047 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64047 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64048 - "GET /api/history?limit=200&offset=0 HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:64069 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64077 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64080 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:64087 - "GET /api/health HTTP/1.1" 200 OK
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [7029]
