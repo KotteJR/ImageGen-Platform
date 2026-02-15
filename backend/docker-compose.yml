@@ -1,0 +1,45 @@
+services:
+  backend:
+    build: .
+    container_name: ai-generator
+    ports:
+      - "8100:8100"
+    volumes:
+      # Persistent HuggingFace model cache — survives rebuilds
+      - models:/data/models
+      # Persistent generated images
+      - generated:/data/generated
+    environment:
+      - PORT=8100
+      - LOG_LEVEL=INFO
+      - PRELOAD_MODELS=lightning,realvis_fast,realvis_quality,flux
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # Set your HuggingFace token here for gated models (FLUX.1)
+      # Get a token at https://huggingface.co/settings/tokens
+      - HF_TOKEN=${HF_TOKEN:-}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    # Recommended by NVIDIA for PyTorch on Grace Blackwell
+    ipc: host
+    ulimits:
+      memlock: -1
+      stack: 67108864
+    shm_size: "16gb"
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+volumes:
+  models:
+    name: ai-generator-models
+  generated:
+    name: ai-generator-data

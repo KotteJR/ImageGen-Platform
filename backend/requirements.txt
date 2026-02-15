@@ -1,22 +1,32 @@
-# SDXL Lightning Image Generator — Dependencies
+# AI Image Generator — Python dependencies
+# PyTorch + CUDA are provided by the NGC base image (DO NOT install torch here)
 
 # Web framework
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.32.0
+python-multipart>=0.0.12
 
-# HTTP & Data
-pydantic>=2.5.0
+# AI / Diffusion (compatible with NGC PyTorch 25.01 / PyTorch 2.6)
+# HunyuanVideoPipeline available since diffusers 0.31.0
+diffusers==0.32.0
+transformers==4.47.1
+accelerate==1.2.1
+safetensors>=0.4.5
+sentencepiece>=0.2.0
 
-# AI / Deep Learning
-torch>=2.2.0
-diffusers>=0.29.0
-transformers>=4.40.0
-accelerate>=0.25.0
-safetensors>=0.4.0
-huggingface_hub>=0.20.0
+# Image processing
+Pillow>=10.4.0
 
-# Image
-pillow>=10.0.0
+# HuggingFace Hub
+huggingface-hub>=0.26.0
 
-# Note: On CUDA, install torch separately first:
-# pip install torch --index-url https://download.pytorch.org/whl/cu121
+# Pydantic (data validation)
+pydantic>=2.9.0
+
+# TTS — Chatterbox (Resemble AI, 500M params)
+chatterbox-tts
+soundfile>=0.12.0
+scipy>=1.11.0
+
+# NOTE: xformers is NOT needed — PyTorch 2.x has built-in SDPA attention
+# NOTE: torch is NOT listed — provided by the NGC base image

@@ -1,0 +1,44 @@
+# Hunyuan AI Generator — Dependencies
+#
+# Install on top of the base requirements.txt:
+#   pip install -r requirements.txt
+#   pip install -r requirements-hunyuan.txt
+#
+# For 3D support, also install hy3dgen:
+#   pip install git+https://github.com/Tencent/Hunyuan3D-2.git
+
+# ── Web framework (same as base) ──
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.5.0
+python-multipart>=0.0.6  # for file uploads (3D endpoint)
+
+# ── AI / Deep Learning ──
+torch>=2.2.0
+diffusers>=0.31.0        # HunyuanDiT + HunyuanVideo pipelines
+transformers>=4.45.0     # needed for HunyuanVideo text encoder
+accelerate>=0.25.0
+safetensors>=0.4.0
+huggingface_hub>=0.20.0
+
+# ── INT4 Quantization (HunyuanVideo on 24GB GPUs) ──
+bitsandbytes>=0.43.0
+
+# ── Image / Video ──
+pillow>=10.0.0
+imageio[ffmpeg]>=2.31.0  # video export (MP4 encoding)
+
+# ── Optional: 3D Generation (Hunyuan3D-2) ──
+# Not on PyPI — install from GitHub:
+#   pip install git+https://github.com/Tencent/Hunyuan3D-2.git
+# This provides:
+#   - hy3dgen.shapegen (Hunyuan3DDiTFlowMatchingPipeline)
+#   - hy3dgen.texgen   (Hunyuan3DPaintPipeline)
+#   - hy3dgen.rembg    (BackgroundRemover)
+# After pip install, also compile the differentiable renderer:
+#   cd <hy3dgen_path>/texgen/differentiable_renderer
+#   bash compile_mesh_painter.sh    # Linux/Mac
+#   python setup.py install         # Windows
+
+# Note: On CUDA, install torch separately first:
+# pip install torch --index-url https://download.pytorch.org/whl/cu121

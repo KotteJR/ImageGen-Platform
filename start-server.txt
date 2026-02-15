@@ -1,0 +1,4 @@
+ssh vlatko@192.168.1.112
+cd ~/sdxl-lightning-app/backend
+source venv/bin/activate
+python server-cuda.py
