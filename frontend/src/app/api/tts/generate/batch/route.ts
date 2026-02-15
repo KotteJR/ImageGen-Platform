@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8100";
 
-export const maxDuration = 600; // 10 min for multi-voice batch
+export const maxDuration = 300; // 5 min max (Vercel hobby plan limit)
 
 export async function POST(request: NextRequest) {
   let body: Record<string, unknown>;

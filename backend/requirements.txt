@@ -24,7 +24,8 @@ huggingface-hub>=0.26.0
 pydantic>=2.9.0
 
 # TTS — Chatterbox (Resemble AI, 500M params)
-chatterbox-tts
+# Installed with --no-deps because chatterbox pins numpy<1.26 and torch==2.6.0
+# which conflict with the NGC image (numpy 1.26.4, torch 2.6.0a0). All work fine.
 soundfile>=0.12.0
 scipy>=1.11.0
 
