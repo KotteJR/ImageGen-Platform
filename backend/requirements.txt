@@ -17,6 +17,9 @@ sentencepiece>=0.2.0
 # Image processing
 Pillow>=10.4.0
 
+# Professional graphics rendering (charts, dashboards, infographics)
+matplotlib>=3.8.0
+
 # HuggingFace Hub
 huggingface-hub>=0.26.0
 

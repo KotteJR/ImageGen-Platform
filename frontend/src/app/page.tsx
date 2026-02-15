@@ -56,11 +56,16 @@ interface TTSVoice {
   filename: string;
 }
 
+interface TTSSpeaker {
+  id: string;
+  name: string;
+  voice: string;
+}
+
 interface TTSLine {
   id: string;
   text: string;
-  voice: string;
-  label: string;
+  speakerId: string;
 }
 
 interface GeneratedTTS {
@@ -104,6 +109,7 @@ interface GeneratedPro {
   height: number;
   time: number;
   promptUsed: string;
+  engine: string;
 }
 
 interface PromptEntry {
@@ -196,62 +202,53 @@ const PRESET_NEGATIVE =
 const PRO_CATEGORIES: ProCategoryInfo[] = [
   { key: "infographic", label: "Infographic", icon: "M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z",
     subTypes: [
-      { key: "data_overview", label: "Data Overview" }, { key: "process", label: "Process" },
-      { key: "comparison", label: "Comparison" }, { key: "timeline", label: "Timeline" },
-      { key: "statistical", label: "Statistical" }, { key: "list", label: "List" },
-      { key: "geographic", label: "Geographic" }, { key: "hierarchical", label: "Hierarchical" },
+      { key: "data_overview", label: "Data Overview" }, { key: "comparison", label: "Comparison" },
+      { key: "statistical", label: "Statistical" }, { key: "timeline", label: "Timeline" },
+      { key: "process", label: "Process" }, { key: "list", label: "List" },
     ],
   },
   { key: "flowchart", label: "Flowchart", icon: "M7.5 21L3 16.5m0 0L7.5 12M3 16.5h13.5m0-13.5L21 7.5m0 0L16.5 12M21 7.5H7.5",
     subTypes: [
       { key: "process_flow", label: "Process Flow" }, { key: "decision_tree", label: "Decision Tree" },
-      { key: "swimlane", label: "Swimlane" }, { key: "system_flow", label: "System Flow" },
       { key: "workflow", label: "Workflow" }, { key: "algorithm", label: "Algorithm" },
     ],
   },
   { key: "chart", label: "Chart / Graph", icon: "M10.5 6a7.5 7.5 0 107.5 7.5h-7.5V6z M13.5 3.75a5.25 5.25 0 015.25 5.25H13.5V3.75z",
     subTypes: [
       { key: "bar_chart", label: "Bar Chart" }, { key: "pie_chart", label: "Pie Chart" },
-      { key: "line_graph", label: "Line Graph" }, { key: "scatter_plot", label: "Scatter Plot" },
-      { key: "area_chart", label: "Area Chart" }, { key: "donut_chart", label: "Donut Chart" },
-      { key: "radar_chart", label: "Radar Chart" }, { key: "waterfall", label: "Waterfall" },
+      { key: "line_graph", label: "Line Graph" }, { key: "donut_chart", label: "Donut Chart" },
+      { key: "area_chart", label: "Area Chart" }, { key: "radar_chart", label: "Radar Chart" },
+      { key: "scatter_plot", label: "Scatter Plot" }, { key: "waterfall", label: "Waterfall" },
     ],
   },
   { key: "table", label: "Table / Matrix", icon: "M3.375 19.5h17.25m-17.25 0a1.125 1.125 0 01-1.125-1.125M3.375 19.5h7.5c.621 0 1.125-.504 1.125-1.125m-9.75 0V5.625m0 12.75v-1.5c0-.621.504-1.125 1.125-1.125m18.375 2.625V5.625m0 12.75c0 .621-.504 1.125-1.125 1.125m1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125m0 3.75h-7.5A1.125 1.125 0 0112 18.375m9.75-12.75c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125m19.5 0v1.5c0 .621-.504 1.125-1.125 1.125M2.25 5.625v1.5c0 .621.504 1.125 1.125 1.125m0 0h17.25m-17.25 0h7.5c.621 0 1.125.504 1.125 1.125M3.375 8.25c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125m17.25-3.75h-7.5c-.621 0-1.125.504-1.125 1.125m8.625-1.125c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125M12 10.875v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 10.875c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125M13.125 12h7.5m-7.5 0c-.621 0-1.125.504-1.125 1.125M20.625 12c.621 0 1.125.504 1.125 1.125v1.5c0 .621-.504 1.125-1.125 1.125m-17.25 0h7.5M12 14.625v-1.5m0 1.5c0 .621-.504 1.125-1.125 1.125M12 14.625c0 .621.504 1.125 1.125 1.125m-2.25 0c.621 0 1.125.504 1.125 1.125m0 0v1.5c0 .621-.504 1.125-1.125 1.125",
     subTypes: [
       { key: "data_table", label: "Data Table" }, { key: "comparison_matrix", label: "Comparison Matrix" },
-      { key: "feature_matrix", label: "Feature Matrix" }, { key: "pricing_table", label: "Pricing Table" },
-      { key: "schedule", label: "Schedule" }, { key: "scorecard", label: "Scorecard" },
+      { key: "pricing_table", label: "Pricing Table" }, { key: "scorecard", label: "Scorecard" },
     ],
   },
   { key: "diagram", label: "Diagram", icon: "M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
     subTypes: [
-      { key: "architecture", label: "Architecture" }, { key: "network", label: "Network" },
-      { key: "er_diagram", label: "ER Diagram" }, { key: "uml", label: "UML" },
-      { key: "venn", label: "Venn" }, { key: "cycle", label: "Cycle" },
-      { key: "block_diagram", label: "Block Diagram" }, { key: "mind_map", label: "Mind Map" },
+      { key: "block_diagram", label: "Block Diagram" }, { key: "venn", label: "Venn" },
+      { key: "cycle", label: "Cycle" }, { key: "mind_map", label: "Mind Map" },
     ],
   },
   { key: "presentation", label: "Slide", icon: "M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6",
     subTypes: [
       { key: "title_slide", label: "Title Slide" }, { key: "key_metrics", label: "Key Metrics" },
-      { key: "bullet_points", label: "Bullet Points" }, { key: "quote_slide", label: "Quote" },
-      { key: "team_slide", label: "Team" }, { key: "roadmap", label: "Roadmap" },
-      { key: "swot", label: "SWOT Analysis" },
+      { key: "bullet_points", label: "Bullet Points" }, { key: "swot", label: "SWOT" },
+      { key: "roadmap", label: "Roadmap" },
     ],
   },
   { key: "dashboard", label: "Dashboard", icon: "M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z",
     subTypes: [
-      { key: "kpi_dashboard", label: "KPI Dashboard" }, { key: "analytics", label: "Analytics" },
-      { key: "sales_dashboard", label: "Sales" }, { key: "project_status", label: "Project Status" },
-      { key: "financial", label: "Financial" }, { key: "marketing", label: "Marketing" },
+      { key: "kpi_dashboard", label: "KPI Dashboard" }, { key: "sales_dashboard", label: "Sales" },
+      { key: "analytics", label: "Analytics" }, { key: "financial", label: "Financial" },
     ],
   },
   { key: "org_chart", label: "Org Chart", icon: "M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z",
     subTypes: [
       { key: "corporate", label: "Corporate" }, { key: "team_structure", label: "Team Structure" },
-      { key: "project_org", label: "Project Org" }, { key: "flat_org", label: "Flat Org" },
-      { key: "matrix_org", label: "Matrix" },
     ],
   },
 ];
@@ -531,7 +528,10 @@ export default function Home() {
   /* ═══════════════════════════════════════════════════════════════
      TTS TAB STATE
      ═══════════════════════════════════════════════════════════════ */
-  const [ttsLines, setTtsLines] = useState<TTSLine[]>([{ id: makeId(), text: "", voice: "default", label: "Speaker 1" }]);
+  const [ttsSpeakers, setTtsSpeakers] = useState<TTSSpeaker[]>([
+    { id: makeId(), name: "Speaker 1", voice: "default" },
+  ]);
+  const [ttsLines, setTtsLines] = useState<TTSLine[]>([]);
   const [ttsVoices, setTtsVoices] = useState<TTSVoice[]>([]);
   const [ttsVoicesLoaded, setTtsVoicesLoaded] = useState(false);
   const [ttsExaggeration, setTtsExaggeration] = useState(0.35);
@@ -1002,12 +1002,35 @@ export default function Home() {
     })();
   }, [activeTab, ttsVoicesLoaded]);
 
-  const addTtsLine = useCallback(() => {
-    setTtsLines(prev => [...prev, { id: makeId(), text: "", voice: "default", label: `Speaker ${prev.length + 1}` }]);
+  // Speaker management
+  const addTtsSpeaker = useCallback(() => {
+    setTtsSpeakers(prev => {
+      const num = prev.length + 1;
+      return [...prev, { id: makeId(), name: `Speaker ${num}`, voice: "default" }];
+    });
   }, []);
 
+  const removeTtsSpeaker = useCallback((id: string) => {
+    setTtsSpeakers(prev => {
+      if (prev.length <= 1) return prev;
+      const remaining = prev.filter(s => s.id !== id);
+      // Reassign any lines using the deleted speaker to the first speaker
+      setTtsLines(lines => lines.map(l => l.speakerId === id ? { ...l, speakerId: remaining[0].id } : l));
+      return remaining;
+    });
+  }, []);
+
+  const updateTtsSpeaker = useCallback((id: string, field: keyof TTSSpeaker, value: string) => {
+    setTtsSpeakers(prev => prev.map(s => s.id === id ? { ...s, [field]: value } : s));
+  }, []);
+
+  // Line management
+  const addTtsLine = useCallback(() => {
+    setTtsLines(prev => [...prev, { id: makeId(), text: "", speakerId: ttsSpeakers[0]?.id || "" }]);
+  }, [ttsSpeakers]);
+
   const removeTtsLine = useCallback((id: string) => {
-    setTtsLines(prev => prev.length <= 1 ? prev : prev.filter(l => l.id !== id));
+    setTtsLines(prev => prev.filter(l => l.id !== id));
   }, []);
 
   const updateTtsLine = useCallback((id: string, field: keyof TTSLine, value: string) => {
@@ -1050,15 +1073,20 @@ export default function Home() {
     ttsTimerRef.current = setInterval(() => setTtsElapsed(prev => prev + 1), 1000);
 
     try {
-      if (validLines.length === 1) {
-        // Single generation
-        const line = validLines[0];
+      // Resolve each line's voice from its speaker
+      const resolvedLines = validLines.map(l => {
+        const speaker = ttsSpeakers.find(s => s.id === l.speakerId) || ttsSpeakers[0];
+        return { text: l.text, voice: speaker?.voice || "default", label: speaker?.name || "Speaker" };
+      });
+
+      if (resolvedLines.length === 1) {
+        const item = resolvedLines[0];
         const res = await fetch("/api/tts/generate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            text: line.text,
-            voice: line.voice,
+            text: item.text,
+            voice: item.voice,
             exaggeration: ttsExaggeration,
             cfg_weight: ttsCfgWeight,
             temperature: ttsTemperature,
@@ -1073,23 +1101,22 @@ export default function Home() {
         const data = await res.json();
         const result: GeneratedTTS = {
           id: makeId(),
-          text: line.text,
-          voice: data.voice,
+          text: item.text,
+          voice: item.voice,
           audio: data.audio,
           duration: data.duration,
           time: data.time_seconds,
-          label: line.label,
+          label: item.label,
         };
         setTtsResults(prev => [result, ...prev]);
         setSelectedTts(result);
         setSelectedBatch(null);
       } else {
-        // Batch generation
         const res = await fetch("/api/tts/generate/batch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            items: validLines.map(l => ({ text: l.text, voice: l.voice, label: l.label })),
+            items: resolvedLines.map(l => ({ text: l.text, voice: l.voice, label: l.label })),
             exaggeration: ttsExaggeration,
             cfg_weight: ttsCfgWeight,
             temperature: ttsTemperature,
@@ -1107,12 +1134,12 @@ export default function Home() {
           .filter((r: { success: boolean }) => r.success)
           .map((r: { audio: string; duration: number; voice: string; time_seconds: number; label: string; index: number }) => ({
             id: makeId(),
-            text: validLines[r.index]?.text || "",
-            voice: r.voice,
+            text: resolvedLines[r.index]?.text || "",
+            voice: r.voice || resolvedLines[r.index]?.voice,
             audio: r.audio,
             duration: r.duration,
             time: r.time_seconds,
-            label: r.label || validLines[r.index]?.label,
+            label: r.label || resolvedLines[r.index]?.label,
           }));
         const batch: GeneratedTTSBatch = {
           id: makeId(),
@@ -1132,7 +1159,7 @@ export default function Home() {
       setTtsLoading(false);
       if (ttsTimerRef.current) clearInterval(ttsTimerRef.current);
     }
-  }, [ttsLines, ttsLoading, ttsExaggeration, ttsCfgWeight, ttsTemperature, ttsRepPenalty, ttsSpeed, ttsCombine]);
+  }, [ttsLines, ttsSpeakers, ttsLoading, ttsExaggeration, ttsCfgWeight, ttsTemperature, ttsRepPenalty, ttsSpeed, ttsCombine]);
 
   /* ═══════════════════════════════════════════════════════════════
      PROFESSIONAL TAB LOGIC
@@ -1190,6 +1217,7 @@ export default function Home() {
         height: data.height,
         time: data.time_seconds,
         promptUsed: data.prompt_used,
+        engine: data.engine || "matplotlib",
       };
       setProResults(prev => [result, ...prev]);
       setSelectedPro(result);
@@ -2219,59 +2247,104 @@ export default function Home() {
               ──────────────────────────────────────────────────────── */}
           {activeTab === "tts" && (
             <>
-              {/* Lines / Prompts */}
+              {/* ── Step 1: Speakers ── */}
               <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-[12px] font-medium text-white/50">
-                    {ttsLines.length > 1 ? `${ttsLines.length} speakers` : "Text to Speech"}
-                  </span>
-                  <button onClick={addTtsLine}
-                    className="rounded-lg border border-white/[0.08] px-2 py-1 text-[10px] text-white/40 hover:text-white/60 hover:border-white/[0.12] transition">
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/30">1. Speakers</span>
+                  <button onClick={addTtsSpeaker}
+                    className="rounded-lg border border-amber-500/20 bg-amber-500/[0.06] px-2.5 py-1 text-[10px] text-amber-400/70 hover:text-amber-300 hover:border-amber-500/30 transition">
                     + Add Speaker
                   </button>
                 </div>
-
-                <div className="flex flex-col gap-3">
-                  {ttsLines.map((line, idx) => (
-                    <div key={line.id} className="rounded-lg border border-white/[0.06] bg-white/[0.01] p-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <input
-                          type="text" value={line.label}
-                          onChange={(e) => updateTtsLine(line.id, "label", e.target.value)}
-                          className="flex-1 rounded-md border border-white/[0.06] bg-transparent px-2 py-1 text-[11px] text-amber-300/70 placeholder-white/20 outline-none focus:border-amber-500/30"
-                          placeholder={`Speaker ${idx + 1}`}
-                        />
-                        <select
-                          value={line.voice}
-                          onChange={(e) => updateTtsLine(line.id, "voice", e.target.value)}
-                          className="rounded-md border border-white/[0.06] bg-[#12121a] px-2 py-1 text-[11px] text-white/60 outline-none focus:border-amber-500/30 cursor-pointer"
-                        >
-                          <option value="default">Default Voice</option>
-                          {ttsVoices.map(v => (
-                            <option key={v.id} value={v.id}>{v.name}</option>
-                          ))}
-                        </select>
-                        {ttsLines.length > 1 && (
-                          <button onClick={() => removeTtsLine(line.id)}
-                            className="rounded p-1 text-white/20 hover:text-red-400/60 hover:bg-red-500/10 transition">
-                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                          </button>
-                        )}
+                <div className="flex flex-col gap-2">
+                  {ttsSpeakers.map((spk, idx) => (
+                    <div key={spk.id} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.01] px-2.5 py-2">
+                      <div className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                        style={{ backgroundColor: `hsl(${idx * 60 + 30}, 60%, 25%)`, color: `hsl(${idx * 60 + 30}, 80%, 70%)` }}>
+                        {idx + 1}
                       </div>
-                      <textarea
-                        value={line.text}
-                        onChange={(e) => updateTtsLine(line.id, "text", e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        rows={2}
-                        placeholder="Enter text to speak..."
-                        className="w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[12px] text-white/80 placeholder-white/20 outline-none transition focus:border-amber-500/30 resize-none leading-relaxed"
+                      <input
+                        type="text" value={spk.name}
+                        onChange={(e) => updateTtsSpeaker(spk.id, "name", e.target.value)}
+                        className="w-24 flex-shrink-0 rounded-md border border-white/[0.06] bg-transparent px-2 py-1 text-[11px] text-amber-300/70 placeholder-white/20 outline-none focus:border-amber-500/30"
+                        placeholder={`Speaker ${idx + 1}`}
                       />
-                      <div className="flex justify-between mt-1">
-                        <span className="text-[9px] text-white/15">{line.text.length}/5000</span>
-                      </div>
+                      <select
+                        value={spk.voice}
+                        onChange={(e) => updateTtsSpeaker(spk.id, "voice", e.target.value)}
+                        className="flex-1 min-w-0 rounded-md border border-white/[0.06] bg-[#12121a] px-2 py-1 text-[11px] text-white/60 outline-none focus:border-amber-500/30 cursor-pointer"
+                      >
+                        <option value="default">Default Voice</option>
+                        {ttsVoices.map(v => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                      {ttsSpeakers.length > 1 && (
+                        <button onClick={() => removeTtsSpeaker(spk.id)}
+                          className="rounded p-1 text-white/20 hover:text-red-400/60 hover:bg-red-500/10 transition flex-shrink-0">
+                          <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                        </button>
+                      )}
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* ── Step 2: Dialogue Lines ── */}
+              <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[10px] font-medium uppercase tracking-widest text-white/30">2. Dialogue</span>
+                  <button onClick={addTtsLine}
+                    className="rounded-lg border border-white/[0.08] px-2.5 py-1 text-[10px] text-white/40 hover:text-white/60 hover:border-white/[0.12] transition">
+                    + Add Line
+                  </button>
+                </div>
+
+                {ttsLines.length === 0 ? (
+                  <button onClick={addTtsLine}
+                    className="w-full rounded-lg border border-dashed border-white/[0.08] bg-white/[0.01] py-6 text-[11px] text-white/25 hover:text-white/40 hover:border-white/[0.12] transition">
+                    Click to add your first dialogue line
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {ttsLines.map((line) => {
+                      const speaker = ttsSpeakers.find(s => s.id === line.speakerId) || ttsSpeakers[0];
+                      const spkIdx = ttsSpeakers.findIndex(s => s.id === line.speakerId);
+                      return (
+                        <div key={line.id} className="rounded-lg border border-white/[0.06] bg-white/[0.01] p-2.5">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <select
+                              value={line.speakerId}
+                              onChange={(e) => updateTtsLine(line.id, "speakerId", e.target.value)}
+                              className="rounded-md border border-white/[0.06] bg-[#12121a] px-2 py-1 text-[11px] font-medium outline-none focus:border-amber-500/30 cursor-pointer"
+                              style={{ color: `hsl(${(spkIdx >= 0 ? spkIdx : 0) * 60 + 30}, 80%, 70%)` }}
+                            >
+                              {ttsSpeakers.map((s, si) => (
+                                <option key={s.id} value={s.id} style={{ color: `hsl(${si * 60 + 30}, 80%, 70%)` }}>
+                                  {s.name} ({s.voice === "default" ? "Default" : s.voice})
+                                </option>
+                              ))}
+                            </select>
+                            <span className="flex-1" />
+                            <button onClick={() => removeTtsLine(line.id)}
+                              className="rounded p-1 text-white/20 hover:text-red-400/60 hover:bg-red-500/10 transition">
+                              <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                          <textarea
+                            value={line.text}
+                            onChange={(e) => updateTtsLine(line.id, "text", e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            rows={2}
+                            placeholder={`What does ${speaker?.name || "this speaker"} say?`}
+                            className="w-full rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2 text-[12px] text-white/80 placeholder-white/20 outline-none transition focus:border-amber-500/30 resize-none leading-relaxed"
+                          />
+                          <div className="mt-1 text-[9px] text-white/15">{line.text.length}/5000</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
 
                 {ttsLines.length > 1 && (
                   <div className="mt-3 flex items-center gap-2">
@@ -2287,9 +2360,9 @@ export default function Home() {
               {/* Generate Button */}
               <button
                 onClick={generateTts}
-                disabled={ttsLoading || ttsLines.every(l => !l.text.trim())}
+                disabled={ttsLoading || ttsLines.length === 0 || ttsLines.every(l => !l.text.trim())}
                 className={`w-full rounded-xl py-3 text-[13px] font-semibold transition ${
-                  ttsLoading || ttsLines.every(l => !l.text.trim())
+                  ttsLoading || ttsLines.length === 0 || ttsLines.every(l => !l.text.trim())
                     ? "bg-white/[0.04] text-white/20 cursor-not-allowed"
                     : "bg-gradient-to-r from-amber-600 to-orange-600 text-white hover:from-amber-500 hover:to-orange-500 shadow-lg shadow-amber-500/20"
                 }`}
@@ -2300,7 +2373,7 @@ export default function Home() {
                     Generating... {ttsElapsed}s
                   </span>
                 ) : (
-                  <span>Generate Speech {ttsLines.filter(l => l.text.trim()).length > 1 ? `(${ttsLines.filter(l => l.text.trim()).length} clips)` : ""}</span>
+                  <span>Generate Speech {ttsLines.filter(l => l.text.trim()).length > 1 ? `(${ttsLines.filter(l => l.text.trim()).length} clips)` : ttsLines.length === 0 ? "" : ""}</span>
                 )}
               </button>
 
@@ -2906,8 +2979,14 @@ export default function Home() {
                   </div>
                 </div>
                 <p className="mt-1.5 text-[11px] text-white/20 line-clamp-2">{selectedPro.content}</p>
+                <div className="mt-1.5 flex items-center gap-2">
+                  <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[9px] font-medium text-emerald-400/70 ring-1 ring-emerald-500/20">
+                    {selectedPro.engine || "matplotlib"}
+                  </span>
+                  <span className="text-[9px] text-white/15">Pixel-perfect rendering</span>
+                </div>
                 <details className="mt-1">
-                  <summary className="text-[9px] text-white/15 cursor-pointer hover:text-white/25 transition">Prompt used</summary>
+                  <summary className="text-[9px] text-white/15 cursor-pointer hover:text-white/25 transition">Details</summary>
                   <p className="mt-1 text-[9px] text-white/10 leading-relaxed">{selectedPro.promptUsed}</p>
                 </details>
               </div>
@@ -2916,8 +2995,8 @@ export default function Home() {
                 {proLoading ? (
                   <div className="flex flex-col items-center gap-4">
                     <div className="h-10 w-10 rounded-full border-2 border-rose-500/60 border-t-transparent animate-spin" />
-                    <p className="text-[13px] text-white/30">Generating {currentProCategory?.label}...</p>
-                    <p className="text-[10px] text-white/10 max-w-xs text-center">AI is crafting a professional graphic using FLUX with optimized prompts</p>
+                    <p className="text-[13px] text-white/30">Rendering {currentProCategory?.label}...</p>
+                    <p className="text-[10px] text-white/10 max-w-xs text-center">Code-based rendering with matplotlib — pixel-perfect text and real data</p>
                   </div>
                 ) : (
                   <div className="flex flex-col items-center gap-3 text-white/15">
@@ -2925,7 +3004,7 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
                     </svg>
                     <p className="text-[13px] text-white/25">Professional graphics appear here</p>
-                    <p className="text-[11px] text-white/15">Choose a category, describe your data, and generate</p>
+                    <p className="text-[11px] text-white/15">Code-rendered with real data — no AI hallucinated text</p>
                     <div className="mt-3 grid grid-cols-4 gap-2 text-[9px] text-white/10 max-w-md">
                       <div className="rounded-lg border border-white/[0.04] p-2 text-center">
                         <p className="text-rose-400/30 font-medium">Infographics</p>
