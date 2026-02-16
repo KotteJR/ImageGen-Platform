@@ -36,6 +36,20 @@ Endpoints:
   GET  /api/history              → generation history
 """
 
+# ── Install torchaudio shim BEFORE any other imports ─────────────────
+# NGC PyTorch 25.01 has a custom torch ABI that breaks the real torchaudio
+# C extension.  This pure-Python shim provides the 3 functions Chatterbox
+# actually needs (load, Resample, fbank) using soundfile/scipy/librosa.
+try:
+    import torchaudio as _ta_test
+    _ta_test.load  # if this works, real torchaudio is fine
+except Exception:
+    try:
+        from torchaudio_shim import install as _install_shim
+        _install_shim()
+    except Exception:
+        pass  # will fail later when TTS tries to load
+
 import asyncio
 import base64
 import gc
@@ -2054,21 +2068,28 @@ VOICES_DIR = Path(__file__).parent / "voices"
 
 
 def _get_chatterbox():
-    """Lazy-load Chatterbox TTS model (500M params).
-    
-    Loaded on CPU to avoid NVRTC JIT compilation errors on Blackwell (sm_121).
-    CPU inference is fast enough for a 500M model with 128 GB RAM.
-    """
+    """Lazy-load Chatterbox TTS model (500M params) on GPU."""
     global _chatterbox_model, _chatterbox_checked
     if _chatterbox_checked:
         return _chatterbox_model
     _chatterbox_checked = True
     try:
+        # Disable JIT to avoid NVRTC architecture errors on Blackwell (sm_121)
+        os.environ.setdefault("PYTORCH_JIT", "0")
+
         from chatterbox.tts import ChatterboxTTS
-        logger.info("[TTS] Loading Chatterbox TTS on CPU (avoids Blackwell NVRTC issues)...")
-        model = ChatterboxTTS.from_pretrained(device="cpu")
+        logger.info(f"[TTS] Loading Chatterbox TTS on {DEVICE}...")
+        model = ChatterboxTTS.from_pretrained(device=DEVICE)
+
+        # Replace Perth watermarker with a no-op — Perth's STFT triggers
+        # NVRTC complex-number kernel compilation which fails on Blackwell
+        class _NoOpWatermarker:
+            def apply_watermark(self, wav, sample_rate=None):
+                return wav
+        model.watermarker = _NoOpWatermarker()
+
         _chatterbox_model = model
-        logger.info("[TTS] Chatterbox loaded on CPU ✓")
+        logger.info(f"[TTS] Chatterbox loaded on {DEVICE} ✓ (watermarker disabled)")
         return _chatterbox_model
     except ImportError:
         logger.warning("[TTS] chatterbox-tts not installed")
@@ -2115,6 +2136,11 @@ def _generate_tts_sync(
     text = text.replace('...', ',').replace('\u2026', ',')
     text = _re.sub(r' - ', ' \u2014 ', text)
 
+    # Pre-cache voice conditionals on the model's device
+    # (handles CPU→GPU placement internally so generate() works)
+    if voice_path:
+        model.prepare_conditionals(voice_path, exaggeration=exaggeration)
+
     # Split into sentences, generate in chunks of 2
     sentences = [s.strip() for s in _re.split(r'(?<=[.!?])\s+', text) if s.strip()]
     if not sentences:
@@ -2129,15 +2155,13 @@ def _generate_tts_sync(
         if not chunk.strip():
             continue
         try:
-            gen_kwargs = dict(
+            wav = model.generate(
+                chunk,
                 exaggeration=exaggeration,
                 cfg_weight=cfg_weight,
                 temperature=temperature,
                 repetition_penalty=repetition_penalty,
             )
-            if voice_path:
-                gen_kwargs["audio_prompt_path"] = voice_path
-            wav = model.generate(chunk, **gen_kwargs)
             if hasattr(wav, 'cpu'):
                 audio_np = wav.cpu().numpy()
             else:

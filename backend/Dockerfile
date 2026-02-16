@@ -20,6 +20,9 @@ ENV GENERATED_DIR=/data/generated
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
+# Disable PyTorch JIT to avoid NVRTC arch errors on Blackwell (sm_121)
+ENV PYTORCH_JIT=0
+
 WORKDIR /app
 
 # Install Python dependencies (torch is already in the NGC image)
@@ -27,9 +30,15 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Install torchaudio from source (NGC 25.01 doesn't ship it; PyPI wheels are ABI-incompatible)
-RUN BUILD_SOX=0 USE_CUDA=1 pip install --no-cache-dir --no-deps --no-build-isolation \
-        git+https://github.com/pytorch/audio.git@v2.6.0
+# ── Torchaudio shim ─────────────────────────────────────────────────
+# NGC 25.01's PyTorch has a custom C++ ABI that breaks torchaudio's
+# C extension (undefined symbol: VariableInfo constructor mismatch).
+# Instead of fighting with compilation, we use a pure-Python shim that
+# provides the 3 functions Chatterbox actually needs:
+#   torchaudio.load(), torchaudio.transforms.Resample(),
+#   torchaudio.compliance.kaldi.fbank()
+# Implemented with soundfile, scipy, and librosa (already in requirements).
+COPY torchaudio_shim.py .
 
 # Install Chatterbox TTS and deps WITHOUT touching NGC's torch/torchvision/numpy.
 # Strategy: --no-deps on packages that declare torch deps, then install their sub-deps.
@@ -57,7 +66,9 @@ RUN pip install --no-cache-dir --no-deps \
         numba \
         llvmlite \
         future && \
-    python -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available()); from chatterbox.tts import ChatterboxTTS; print('chatterbox: OK')"
+    python -c "import torch; print('torch:', torch.__version__, 'cuda:', torch.cuda.is_available()); \
+               from torchaudio_shim import install; install(); \
+               from chatterbox.tts import ChatterboxTTS; print('chatterbox: OK')"
 
 # Install ffmpeg for video export (HunyuanVideo) and TTS audio processing
 RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && \
